@@ -13,7 +13,7 @@ var PingPong_Admin_MatchCPTs
 
             api.setup_handlers();
             api.initialize_match_type();
-            api.initialize_player_selects();
+            //api.initialize_player_selects();
         },
 
         /**

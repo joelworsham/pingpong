@@ -24,6 +24,9 @@ class PingPong_Roles {
 	function __construct() {
 
 		add_action( 'init', array( $this, 'add_roles' ) );
+		add_action( 'show_user_profile', array( $this, 'add_user_fields' ) );
+		add_action( 'edit_user_profile', array( $this, 'add_user_fields' ) );
+
 	}
 
 	/**
@@ -87,5 +90,50 @@ class PingPong_Roles {
 				remove_role( $role_ID );
 			}
 		}
+	}
+
+	/**
+	 * Show users fields.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 *
+	 * @param WP_User $user
+	 */
+	function add_user_fields( $user ) {
+
+		if ( ! in_array( 'player', $user->roles ) ) {
+
+			return;
+		}
+
+		if ( $overall_points = get_user_meta( $user->ID, 'player_overall_points', true ) ) {
+
+			$overall_points = esc_attr( $overall_points );
+
+		} else {
+
+			$overall_points = __( 'No points yet', 'pingpong' );
+		}
+
+		?>
+		<h3>
+			<?php _e( 'Player Points', 'pingpong' ); ?>
+		</h3>
+
+		<table class="form-table">
+
+			<tr>
+				<th>
+					<?php _e( 'Overall Points', 'pingpong' ); ?>
+				</th>
+
+				<td>
+					<?php echo $overall_points; ?>
+				</td>
+			</tr>
+
+		</table>
+		<?php
 	}
 }

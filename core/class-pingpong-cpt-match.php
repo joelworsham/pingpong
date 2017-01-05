@@ -33,7 +33,73 @@ class PingPong_CPT_Match extends RBM_CPT {
 
 		parent::__construct();
 
+		add_action( 'init', array( $this, 'add_post_statuses' ) );
+		add_action( 'admin_footer-post.php', array( $this, 'add_post_statuses_to_dropdown' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
+		add_filter( 'the_content', array( $this, 'frontend_output' ) );
+		add_action( 'post_submitbox_misc_actions', array( $this, 'add_publish_sections' ) );
+		add_action( 'admin_footer', array( $this, 'scores_modal' ) );
+	}
+
+	/**
+	 * Adds custom post statuses.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function add_post_statuses() {
+
+		global $wp_post_statuses;
+
+		register_post_status( 'match_complete', array(
+			'label'                     => __( 'Completed', 'pingpong' ),
+			'label_count'               => _n_noop( 'Completed <span class="count">(%s)</span>', 'Completed <span class="count">(%s)</span>', 'pingpong' ),
+			'exclude_from_search'       => get_post_type_object( 'match' )->exclude_from_search,
+			'public'                    => get_post_type_object( 'match' )->public,
+			'publicly_queryable'        => get_post_type_object( 'match' )->publicly_queryable,
+			'show_in_admin_status_list' => true,
+			'show_in_admin_all_list'    => true,
+		) );
+	}
+
+	/**
+	 * Add custom statuses to dropdown (messy, but all that's available now).
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function add_post_statuses_to_dropdown() {
+
+		if ( get_post_type() != 'match' ) {
+
+			return;
+		}
+
+		$custom_statuses = array(
+			'match_complete' => __( 'Completed', 'pingpong' ),
+		);
+		?>
+		<script type="text/javascript">
+			(function ($) {
+
+				$(function () {
+
+					var $status_select = $('#post_status'),
+						$status_display = $('#post-status-display');
+
+					<?php foreach ( $custom_statuses as $status => $status_label ) : ?>
+					$status_select.append('<option value="<?php echo $status; ?>"><?php echo $status_label; ?></option>');
+
+					<?php if ( $status == get_post_status() ) : ?>
+					$status_select.find('option[value="<?php echo $status; ?>"]').prop('selected', true);
+					$status_display.html('<?php echo $status_label; ?>');
+					<?php endif; ?>
+					<?php endforeach; ?>
+				});
+			})(jQuery);
+		</script>
+		<?php
+
 	}
 
 	/**
@@ -61,22 +127,30 @@ class PingPong_CPT_Match extends RBM_CPT {
 		);
 
 		add_meta_box(
+			'match-league',
+			__( 'Match League', 'pingpong' ),
+			array( $this, 'mb_match_league' ),
+			$this->post_type,
+			'side'
+		);
+
+		add_meta_box(
 			'match-settings-singles',
-			__( 'Match Settings', 'pingpong' ),
+			__( 'Match Settings Singles', 'pingpong' ),
 			array( $this, 'mb_match_settings_singles' ),
 			$this->post_type
 		);
 
 		add_meta_box(
 			'match-settings-doubles',
-			__( 'Match Settings', 'pingpong' ),
+			__( 'Match Settings Doubles', 'pingpong' ),
 			array( $this, 'mb_match_settings_doubles' ),
 			$this->post_type
 		);
 
 		add_meta_box(
 			'match-settings-team',
-			__( 'Match Settings', 'pingpong' ),
+			__( 'Match Settings Team', 'pingpong' ),
 			array( $this, 'mb_match_settings_team' ),
 			$this->post_type
 		);
@@ -111,6 +185,34 @@ class PingPong_CPT_Match extends RBM_CPT {
 				'team'    => __( 'Team Match', 'pingpong' ),
 				'doubles' => __( 'Doubles Match', 'pingpong' ),
 			),
+		) );
+	}
+
+	/**
+	 * Outputs the metabox for the Match League.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function mb_match_league() {
+
+		$leagues = get_posts( array(
+			'post_type'   => 'league',
+			'numberposts' => - 1,
+		) );
+
+		$league_options = array(
+			'' => __( '- No League -', 'pingpong' ),
+		);
+
+		if ( $leagues && ! is_wp_error( $leagues ) ) {
+
+			$league_options = array_merge( $league_options, wp_list_pluck( $leagues, 'post_title', 'ID' ) );
+		}
+
+		rbm_do_field_select( 'league', false, false, array(
+			'options'     => $league_options,
+			'input_class' => 'rbm-select2',
 		) );
 	}
 
@@ -180,5 +282,72 @@ class PingPong_CPT_Match extends RBM_CPT {
 	function mb_match_settings_doubles() {
 
 		echo 'Doubles';
+	}
+
+	/**
+	 * Outputs any misc publishing sections.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function add_publish_sections() {
+
+		// Add scores
+		?>
+		<div class="misc-pub-section pingpong-add-scores">
+			<button type="button" class="button">
+				<?php _e( 'Add Scores', 'pingpong' ); ?>
+			</button>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Outputs the scores modal.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function scores_modal() {
+
+		?>
+		<div id="pingpong-scores-backdrop"></div>
+		<div id="pingpong-scores">
+			<div class="pingpong-scores-container">
+				<h2 class="pingpong-scores-title">
+					<?php _e( 'Match Scores', 'pingpong' ); ?>
+				</h2>
+			</div>
+
+			<div class="pingpong-scores-actions">
+				<button type="button" class="pingpong-scores-submit button button-primary button-large" data-scores-submit>
+					<?php _e( 'Submit Scores and End Match', 'pingpong' ); ?>
+				</button>
+
+				<a href="#" class="pingpong-scores-close" data-scores-close>
+					<span class="dashicons dashicons-no"></span>
+				</a>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Output frontend display.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 *
+	 * @param string $content
+	 */
+	function frontend_output( $content ) {
+
+		if ( ! is_main_query() ) {
+
+			return $content;
+		}
+
+
+		return $content;
 	}
 }
