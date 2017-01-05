@@ -1,0 +1,32 @@
+{
+  "name": "PingPong",
+  "version": "0.1.0",
+  "authors": [
+    "Joel Worsham <joelworsham@gmail.com>"
+  ],
+  "description": "Creates all of the required Ping Pong functionality.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joelworsham/pingpong.git"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^3.1.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-load-plugins": "^1.1.0",
+    "gulp-notify": "^2.2.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^2.1.0",
+    "gulp-sort": "^2.0.0",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^2.0.0"
+  },
+  "scripts": {
+    "start": "gulp",
+    "build": "gulp sass"
+  },
+  "private": true,
+  "dependencies": {
+    "gulp-autoprefixer": "^3.1.0"
+  }
+}
