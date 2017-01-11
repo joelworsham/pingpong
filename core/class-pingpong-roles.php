@@ -107,14 +107,20 @@ class PingPong_Roles {
 			return;
 		}
 
-		if ( $overall_points = get_user_meta( $user->ID, 'player_overall_points', true ) ) {
+		$player_scores = (array) get_user_meta( $user->ID, 'pingpong_scores', true );
 
-			$overall_points = esc_attr( $overall_points );
+		$games = array();
+		foreach ( $player_scores as $match_ID => $game_score ) {
 
-		} else {
+			if ( ! ( $match_title = get_the_title( $match_ID ) ) ) {
 
-			$overall_points = __( 'No points yet', 'pingpong' );
+				continue;
+			}
+
+			$games[ $match_title ] = $game_score;
 		}
+
+		$games_total = array_sum( $games );
 
 		?>
 		<h3>
@@ -125,11 +131,45 @@ class PingPong_Roles {
 
 			<tr>
 				<th>
-					<?php _e( 'Overall Points', 'pingpong' ); ?>
+					<?php _e( 'Games Won', 'pingpong' ); ?>
 				</th>
 
 				<td>
-					<?php echo $overall_points; ?>
+					<span class="pingpong-won-games-total">
+						<?php echo $games_total; ?>
+					</span>
+
+					<a href="#" data-expand-games>
+						<?php _e( 'View Matches', 'pingpong' ); ?>
+					</a>
+
+					<table id="pingpong-won-games" style="display: none;">
+						<thead>
+						<tr>
+							<th class="pingpong-won-games-title">
+								<?php _e( 'Match Name', 'pingpong' ); ?>
+							</th>
+
+							<th class="pingpong-won-games-score">
+								<?php _e( 'Score', 'pingpong' ); ?>
+							</th>
+						</tr>
+						</thead>
+
+						<tbody>
+						<?php foreach ( $games as $game_title => $game_score ) : ?>
+							<tr>
+								<td class="pingpong-won-games-title">
+									<?php echo $game_title; ?>
+								</td>
+
+								<td class="pingpong-won-games-score">
+									<?php echo $game_score; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+						</tbody>
+					</table>
 				</td>
 			</tr>
 

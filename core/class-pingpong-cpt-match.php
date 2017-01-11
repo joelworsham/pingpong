@@ -571,6 +571,19 @@ class PingPong_CPT_Match extends RBM_CPT {
 			$player_scores[ $match_ID ] = $player_score;
 
 			update_user_meta( $player_ID, 'pingpong_scores', $player_scores );
+			update_user_meta( $player_ID, 'pingpong_games', $player_score );
+		}
+
+		foreach ( $scores['teams'] as $team_ID => $team_score ) {
+
+			if ( ! ( $team_scores = get_post_meta( $team_ID, 'pingpong_scores', true ) ) ) {
+
+				$team_scores = array();
+			}
+
+			$team_scores[ $match_ID ] = $team_score;
+
+			update_post_meta( $team_ID, 'pingpong_scores', $team_scores );
 		}
 
 		update_post_meta( $match_ID, 'pingpong_scores', $scores );

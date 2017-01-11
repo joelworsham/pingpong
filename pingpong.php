@@ -59,6 +59,15 @@ if ( ! class_exists( 'PingPong' ) ) {
 		 */
 		public $cpt_league;
 
+		/**
+		 * Creates the Rankings.
+		 *
+		 * @since {{VERSION}}
+		 *
+		 * @var PingPong_Rankings
+		 */
+		public $rankings;
+
 		private function __clone() {
 		}
 
@@ -117,6 +126,13 @@ if ( ! class_exists( 'PingPong' ) ) {
 			$this->cpt_match  = new PingPong_CPT_Match();
 			$this->cpt_team   = new PingPong_CPT_Team();
 			$this->cpt_league = new PingPong_CPT_League();
+
+			if ( is_admin() ) {
+
+				require_once PINGPONG_DIR . 'admin/class-pingpong-rankings.php';
+
+				$this->cpt_league = new PingPong_Rankings();
+			}
 		}
 
 		/**
@@ -154,6 +170,8 @@ if ( ! class_exists( 'PingPong' ) ) {
 					'error_too_many_team_players' => __( 'Error: Each team can only have 2 players for a Team Match.', 'pingpong' ),
 					'could_not_save_match'        => __( 'Could not save match scores.', 'pingpong' ),
 					'confirm_submit_match'        => __( 'Are you sure you want to submit this match? You cannot edit this later.', 'pingpopn' ),
+					'view_matches'                => __( 'View Matches', 'pingpong' ),
+					'hide_matches'                => __( 'Hide Matches', 'pingpong' ),
 				),
 			) );
 

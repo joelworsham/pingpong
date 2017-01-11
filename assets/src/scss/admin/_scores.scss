@@ -1,0 +1,14 @@
+.pingpong-won-games-total {
+  font-size: 2em;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+#pingpong-won-games {
+  margin-top: 0.5em;
+
+  td, th {
+    width: auto;
+    padding: 0 1em 0.2em 0;
+  }
+}

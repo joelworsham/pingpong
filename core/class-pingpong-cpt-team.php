@@ -64,6 +64,13 @@ class PingPong_CPT_Team extends RBM_CPT {
 			array( $this, 'mb_team_players' ),
 			$this->post_type
 		);
+
+		add_meta_box(
+			'team-scores',
+			__( 'Team Scores', 'pingpong' ),
+			array( $this, 'mb_team_scores' ),
+			$this->post_type
+		);
 	}
 
 	/**
@@ -82,5 +89,67 @@ class PingPong_CPT_Team extends RBM_CPT {
 				'data-maximum-selection-length' => 2,
 			),
 		) );
+	}
+
+	/**
+	 * Metabox for team scores.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function mb_team_scores() {
+
+		$team_scores = get_post_meta( get_the_ID(), 'pingpong_scores', true );
+
+		$games = array();
+		foreach ( $team_scores as $match_ID => $game_score ) {
+
+			if ( ! ( $match_title = get_the_title( $match_ID ) ) ) {
+
+				continue;
+			}
+
+			$games[ $match_title ] = $game_score;
+		}
+
+		$games_total = array_sum( $games );
+		?>
+
+		<span class="pingpong-won-games-total">
+			<?php echo __( 'Games won:', 'pingpong' ) . " $games_total"; ?>
+		</span>
+
+		<a href="#" data-expand-games>
+			<?php _e( 'View Matches', 'pingpong' ); ?>
+		</a>
+
+		<table id="pingpong-won-games" style="display: none;">
+			<thead>
+			<tr>
+				<th class="pingpong-won-games-title">
+					<?php _e( 'Match Name', 'pingpong' ); ?>
+				</th>
+
+				<th class="pingpong-won-games-score">
+					<?php _e( 'Score', 'pingpong' ); ?>
+				</th>
+			</tr>
+			</thead>
+
+			<tbody>
+			<?php foreach ( $games as $game_title => $game_score ) : ?>
+				<tr>
+					<td class="pingpong-won-games-title">
+						<?php echo $game_title; ?>
+					</td>
+
+					<td class="pingpong-won-games-score">
+						<?php echo $game_score; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
 	}
 }
