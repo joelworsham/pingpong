@@ -59,9 +59,11 @@ if ( ! class_exists( 'PingPong' ) ) {
 		 */
 		public $cpt_league;
 
-		private function __clone() { }
+		private function __clone() {
+		}
 
-		private function __wakeup() { }
+		private function __wakeup() {
+		}
 
 		/**
 		 * Returns the *Singleton* instance of this class.
@@ -111,9 +113,9 @@ if ( ! class_exists( 'PingPong' ) ) {
 			require_once PINGPONG_DIR . 'core/class-pingpong-cpt-team.php';
 			require_once PINGPONG_DIR . 'core/class-pingpong-cpt-league.php';
 
-			$this->roles = new PingPong_Roles();
-			$this->cpt_match = new PingPong_CPT_Match();
-			$this->cpt_team = new PingPong_CPT_Team();
+			$this->roles      = new PingPong_Roles();
+			$this->cpt_match  = new PingPong_CPT_Match();
+			$this->cpt_team   = new PingPong_CPT_Team();
 			$this->cpt_league = new PingPong_CPT_League();
 		}
 
@@ -138,6 +140,24 @@ if ( ! class_exists( 'PingPong' ) ) {
 				array( 'jquery' ),
 				defined( 'WP_DEBUG' ) && WP_DEBUG ? time() : PINGPONG_VERSION
 			);
+
+			/**
+			 * Filters the data for localization to JS.
+			 *
+			 * @since {{VERSION}}
+			 */
+			$data = apply_filters( 'pingpong_admin_script_data', array(
+				'l10n' => array(
+					'cant_load_scores'            => __( 'Could not load previous scores.', 'pingpong' ),
+					'game'                        => __( 'Game', 'pingpong' ),
+					'totals'                      => __( 'Totals', 'pingpong' ),
+					'error_too_many_team_players' => __( 'Error: Each team can only have 2 players for a Team Match.', 'pingpong' ),
+					'could_not_save_match'        => __( 'Could not save match scores.', 'pingpong' ),
+					'confirm_submit_match'        => __( 'Are you sure you want to submit this match? You cannot edit this later.', 'pingpopn' ),
+				),
+			) );
+
+			wp_localize_script( 'pingpong-admin', 'PingPong_Admin', $data );
 		}
 
 		/**

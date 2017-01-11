@@ -78,6 +78,9 @@ class PingPong_CPT_Team extends RBM_CPT {
 			'options'  => $this->user_options,
 			'multiple' => true,
 			'input_class'   => 'rbm-select2',
+			'input_atts'  => array(
+				'data-maximum-selection-length' => 2,
+			),
 		) );
 	}
 }

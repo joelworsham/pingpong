@@ -33,12 +33,130 @@ class PingPong_CPT_Match extends RBM_CPT {
 
 		parent::__construct();
 
+		add_filter( 'pingpong_admin_script_data', array( $this, 'add_data' ) );
+		add_action( 'current_screen', array( $this, 'lock_completed' ) );
+		add_filter( 'admin_body_class', array( $this, 'admin_body_classes' ) );
+		add_action( 'admin_notices', array( $this, 'match_notices' ) );
+		add_action( 'pre_get_posts', array( $this, 'remove_from_all' ) );
 		add_action( 'init', array( $this, 'add_post_statuses' ) );
 		add_action( 'admin_footer-post.php', array( $this, 'add_post_statuses_to_dropdown' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ) );
-		add_filter( 'the_content', array( $this, 'frontend_output' ) );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'add_publish_sections' ) );
 		add_action( 'admin_footer', array( $this, 'scores_modal' ) );
+		add_action( 'wp_ajax_pingpong_get_team_players', array( $this, 'ajax_get_teams_players' ) );
+		add_action( 'wp_ajax_pingpong_submit_scores', array( $this, 'ajax_submit_scores' ) );
+		add_action( 'wp_ajax_pingpong_get_match_scores', array( $this, 'ajax_get_match_scores' ) );
+	}
+
+	/**
+	 * Adds javascript data.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 *
+	 * @param array $data
+	 *
+	 * @return mixed
+	 */
+	function add_data( $data ) {
+
+		$data['match_ID'] = isset( $_GET['post'] ) && get_post_type( $_GET['post'] ) == 'match' ? $_GET['post'] : null;
+
+//		$scores = get_post_meta( $_GET['post'], 'pingpong_scores', true );
+//		$data['scores']   = $scores;
+
+		return $data;
+	}
+
+	/**
+	 * Locks editing completed matches.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 *
+	 * @param WP_Screen $screen
+	 */
+	function lock_completed( $screen ) {
+
+		if ( $screen->base != 'post' || $screen->id != 'match' ) {
+
+			return;
+		}
+
+		if ( ! isset( $_GET['match_edit_completed'] ) && get_post_status( $_GET['post'] ) == 'completed' ) {
+
+			wp_die( __( 'You cannot edit this match because it has been completed.', 'pingpong' ) );
+		}
+	}
+
+	/**
+	 * Add some classes.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 *
+	 * @param string $classes
+	 *
+	 * @return mixed
+	 */
+	function admin_body_classes( $classes ) {
+
+		if ( isset( $_GET['post_status'] ) && $_GET['post_status'] == 'match_complete' ) {
+
+			$classes .= ' pingpong-matches-complete';
+		}
+
+		return $classes;
+	}
+
+	/**
+	 * Shows match notices.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function match_notices() {
+
+		if ( isset( $_GET['pingpong_match_saved'] ) ) {
+			?>
+			<div class="notice updated">
+				<p>
+					<?php _e( 'Successfully saved match scores and set to completed.', 'pingpong' ); ?>
+				</p>
+			</div>
+			<?php
+		}
+	}
+
+	/**
+	 * Remove from All list table.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 *
+	 * @param WP_Query $query
+	 */
+	function remove_from_all( $query ) {
+
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+
+			return;
+		}
+
+		$screen = get_current_screen();
+
+		if ( $screen->id != 'edit-match' ||
+		     ( isset( $_GET['post_status'] ) && $_GET['post_status'] != 'all' )
+		) {
+
+			return;
+		}
+
+		$post_statuses = get_post_stati( array(
+			'show_in_admin_all_list'    => true,
+		) );
+
+		$query->set( 'post_status', $post_statuses );
 	}
 
 	/**
@@ -58,7 +176,7 @@ class PingPong_CPT_Match extends RBM_CPT {
 			'public'                    => get_post_type_object( 'match' )->public,
 			'publicly_queryable'        => get_post_type_object( 'match' )->publicly_queryable,
 			'show_in_admin_status_list' => true,
-			'show_in_admin_all_list'    => true,
+			'show_in_admin_all_list'    => false,
 		) );
 	}
 
@@ -164,9 +282,12 @@ class PingPong_CPT_Match extends RBM_CPT {
 	 */
 	function mb_game_settings() {
 
-		rbm_do_field_number( 'games', __( 'Number of Games', 'pingpong' ), false, array(
-			'default' => 1,
-			'min'     => 0,
+		rbm_do_field_select( 'games', __( 'Number of Games', 'pingpong' ), false, array(
+			'options' => array(
+				3 => 3,
+				5 => 5,
+				7 => 7,
+			),
 		) );
 	}
 
@@ -270,6 +391,9 @@ class PingPong_CPT_Match extends RBM_CPT {
 			'options'     => $team_options,
 			'multiple'    => true,
 			'input_class' => 'rbm-select2',
+			'input_atts'  => array(
+				'data-maximum-selection-length' => 2,
+			),
 		) );
 	}
 
@@ -281,7 +405,26 @@ class PingPong_CPT_Match extends RBM_CPT {
 	 */
 	function mb_match_settings_doubles() {
 
-		echo 'Doubles';
+		$teams = get_posts( array(
+			'post_type'   => 'team',
+			'numberposts' => - 1,
+		) );
+
+		$team_options = array();
+
+		if ( $teams && ! is_wp_error( $teams ) ) {
+
+			$team_options = wp_list_pluck( $teams, 'post_title', 'ID' );
+		}
+
+		rbm_do_field_select( 'doubles_teams', __( 'Teams', 'pingpong' ), false, array(
+			'options'     => $team_options,
+			'multiple'    => true,
+			'input_class' => 'rbm-select2',
+			'input_atts'  => array(
+				'data-maximum-selection-length' => 2,
+			),
+		) );
 	}
 
 	/**
@@ -295,7 +438,7 @@ class PingPong_CPT_Match extends RBM_CPT {
 		// Add scores
 		?>
 		<div class="misc-pub-section pingpong-add-scores">
-			<button type="button" class="button">
+			<button type="button" class="button" data-scores-open>
 				<?php _e( 'Add Scores', 'pingpong' ); ?>
 			</button>
 		</div>
@@ -310,44 +453,193 @@ class PingPong_CPT_Match extends RBM_CPT {
 	 */
 	function scores_modal() {
 
+		$screen = get_current_screen();
+
+		if ( $screen->id != 'edit-match' &&
+		     ( $screen->id != 'match' && $screen->base != 'post' )
+		) {
+
+			return;
+		}
+
 		?>
-		<div id="pingpong-scores-backdrop"></div>
-		<div id="pingpong-scores">
+		<div id="pingpong-scores-modal" style="display: none;">
 			<div class="pingpong-scores-container">
-				<h2 class="pingpong-scores-title">
-					<?php _e( 'Match Scores', 'pingpong' ); ?>
-				</h2>
-			</div>
 
-			<div class="pingpong-scores-actions">
-				<button type="button" class="pingpong-scores-submit button button-primary button-large" data-scores-submit>
-					<?php _e( 'Submit Scores and End Match', 'pingpong' ); ?>
-				</button>
+				<div class="pingpong-scores-content">
+					<p class="pingpong-scores-title">
+						<?php _e( 'Match Scores', 'pingpong' ); ?>
+					</p>
 
-				<a href="#" class="pingpong-scores-close" data-scores-close>
-					<span class="dashicons dashicons-no"></span>
-				</a>
+					<div class="pingpong-scores-error notice error inline" style="display: none;">
+						<p></p>
+					</div>
+
+					<table class="pingpong-scores-table">
+
+						<thead></thead>
+
+						<tbody></tbody>
+
+						<tfoot></tfoot>
+
+					</table>
+
+				</div>
+
+				<div class="pingpong-scores-actions">
+
+					<?php if ( $screen->id == 'match' && $screen->base == 'post' ) : ?>
+						<button type="button" class="pingpong-scores-submit button button-primary button-large"
+						        data-scores-submit>
+							<?php _e( 'Submit Scores and End Match', 'pingpong' ); ?>
+						</button>
+					<?php endif; ?>
+
+					<a href="#" class="pingpong-scores-close" data-scores-close>
+						<span class="dashicons dashicons-no"></span>
+					</a>
+				</div>
+
+				<div class="pingpong-scores-cover"><span class="spinner is-active"></span></div>
+
 			</div>
 		</div>
 		<?php
 	}
 
 	/**
-	 * Output frontend display.
+	 * AJAX callback for getting teams' players.
 	 *
 	 * @since {{VERSION}}
 	 * @access private
-	 *
-	 * @param string $content
 	 */
-	function frontend_output( $content ) {
+	function ajax_get_teams_players() {
 
-		if ( ! is_main_query() ) {
+		$team_IDs = $_POST['team_IDs'];
 
-			return $content;
+		$players = array();
+
+		foreach ( $team_IDs as $team_ID ) {
+
+			$team = array(
+				'name'    => get_the_title( $team_ID ),
+				'id'      => $team_ID,
+				'players' => array(),
+			);
+
+			if ( $team_players = pingpong_get_team_players( $team_ID ) ) {
+
+				foreach ( $team_players as $team_player_ID ) {
+
+					$user = new WP_User( $team_player_ID );
+
+					$team['players'][] = array(
+						'name' => $user->display_name,
+						'id'   => $team_player_ID,
+					);
+				}
+
+				$players[] = $team;
+			}
 		}
 
+		wp_send_json_success( $players );
+	}
 
-		return $content;
+	/**
+	 * AJAX callback for submiting scores.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function ajax_submit_scores() {
+
+		$match_ID = $_POST['match_ID'];
+		$scores   = $_POST['scores'];
+
+		unset( $scores['players']['length'] );
+		unset( $scores['teams']['length'] );
+
+		foreach ( $scores['players'] as $player_ID => $player_score ) {
+
+			if ( ! ( $player_scores = get_user_meta( $player_ID, 'pingpong_scores', true ) ) ) {
+
+				$player_scores = array();
+			}
+
+			$player_scores[ $match_ID ] = $player_score;
+
+			update_user_meta( $player_ID, 'pingpong_scores', $player_scores );
+		}
+
+		update_post_meta( $match_ID, 'pingpong_scores', $scores );
+
+		// Set to passed
+		wp_update_post( array(
+			'ID'          => $match_ID,
+			'post_status' => 'match_complete',
+		) );
+
+		wp_send_json_success( array(
+			'redirect' => admin_url( 'edit.php?post_status=match_complete&post_type=match&pingpong_match_saved' ),
+		) );
+	}
+
+	/**
+	 * AJAX callback for getting a match's score.
+	 *
+	 * @since {{VERSION}}
+	 * @access private
+	 */
+	function ajax_get_match_scores() {
+
+		$match_ID = $_POST['match_id'];
+
+		$scores     = get_post_meta( $match_ID, 'pingpong_scores', true );
+		$match_type = get_post_meta( $match_ID, '_rbm_type', true );
+
+		$players = array();
+		$teams   = array();
+
+		foreach ( $scores['players'] as $player_ID => $score ) {
+
+			$user = new WP_User( $player_ID );
+
+			$players[] = array(
+				'name' => $user->display_name,
+				'id'   => $player_ID,
+			);
+		}
+
+		foreach ( $scores['teams'] as $team_ID => $score ) {
+
+			$team_player_IDs = pingpong_get_team_players( $team_ID );
+			$team_players = array();
+
+			foreach ( (array) $team_player_IDs as $player_ID ) {
+
+				$user = new WP_User( $player_ID );
+
+				$team_players[] = array(
+					'name' => $user->display_name,
+					'id'   => $player_ID,
+				);
+			}
+
+			$teams[] = array(
+				'name'    => get_the_title( $team_ID ),
+				'id'      => $team_ID,
+				'players' => $team_players,
+			);
+		}
+
+		$scores['players'] = $players;
+		$scores['teams']   = $teams;
+
+		wp_send_json_success( array(
+			'scores' => $scores,
+			'type'   => $match_type,
+		) );
 	}
 }
