@@ -623,13 +623,19 @@ var PingPong_Admin_MatchCPTs
                 if (typeof players[match.player_1.id] == 'undefined') {
 
                     players.length++;
-                    players[match.player_1.id] = 0;
+                    players[match.player_1.id] = {
+                        games: 0,
+                        points: 0
+                    };
                 }
 
                 if (typeof players[match.player_2.id] == 'undefined') {
 
                     players.length++;
-                    players[match.player_2.id] = 0;
+                    players[match.player_2.id] = {
+                        games: 0,
+                        points: 0
+                    };
                 }
 
                 if (typeof teams[match.player_1.team_id] == 'undefined') {
@@ -686,11 +692,23 @@ var PingPong_Admin_MatchCPTs
                         match.player_2.games++;
                     }
 
-                    match.scores.push([game.player_1.score, game.player_2.score]);
+                    match.scores.push([
+                        {
+                            id: match.player_1.id,
+                            score: game.player_1.score
+                        },
+                        {
+                            id: match.player_2.id,
+                            score: game.player_2.score
+                        }
+                    ]);
+
+                    //players[match.player_1.id].points = players[match.player_1.id].points + game.player_1.score;
+                    //players[match.player_2.id].points = players[match.player_2.id].points + game.player_2.score;
                 }
 
-                players[match.player_1.id] = players[match.player_1.id] + match.player_1.games;
-                players[match.player_2.id] = players[match.player_2.id] + match.player_2.games;
+                players[match.player_1.id].games = players[match.player_1.id].games + match.player_1.games;
+                players[match.player_2.id].games = players[match.player_2.id].games + match.player_2.games;
 
                 if (match.win) {
 
@@ -705,14 +723,16 @@ var PingPong_Admin_MatchCPTs
             api.scores.teams = teams;
             api.scores.matches = matches;
 
-            $.each(players, function (player_ID, player_score) {
+            console.log(api.scores);
+
+            $.each(players, function (player_ID, player) {
 
                 if (player_ID == 'length' || !player_ID) {
 
                     return true;
                 }
 
-                api.$scores_modal.find('tfoot [data-player-id="' + player_ID + '"]').html(player_score);
+                api.$scores_modal.find('tfoot [data-player-id="' + player_ID + '"]').html(player.games);
             });
 
             $.each(teams, function (team_ID, team_score) {
@@ -753,7 +773,7 @@ var PingPong_Admin_MatchCPTs
                         return;
                     }
 
-                    window.location = response.data.redirect;
+                    //window.location = response.data.redirect;
                 }
             );
         }

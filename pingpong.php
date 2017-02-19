@@ -33,6 +33,15 @@ if ( ! class_exists( 'PingPong' ) ) {
 		public $roles;
 
 		/**
+		 * Database functions.
+		 *
+		 * @since {{VERSION}}
+		 *
+		 * @var PingPong_DB
+		 */
+		public $db;
+
+		/**
 		 * Creates the "Match" custom post type.
 		 *
 		 * @since {{VERSION}}
@@ -67,6 +76,15 @@ if ( ! class_exists( 'PingPong' ) ) {
 		 * @var PingPong_Rankings
 		 */
 		public $rankings;
+
+		/**
+		 * Creates the shortcodes.
+		 *
+		 * @since {{VERSION}}
+		 *
+		 * @var PingPong_Shortcodes
+		 */
+		public $shortcodes;
 
 		private function __clone() {
 		}
@@ -105,6 +123,7 @@ if ( ! class_exists( 'PingPong' ) ) {
 			$this->init();
 
 			add_action( 'init', array( $this, 'register_scripts' ) );
+			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 			add_filter( 'rbm_load_select2', '__return_true' );
 		}
@@ -121,11 +140,16 @@ if ( ! class_exists( 'PingPong' ) ) {
 			require_once PINGPONG_DIR . 'core/class-pingpong-cpt-match.php';
 			require_once PINGPONG_DIR . 'core/class-pingpong-cpt-team.php';
 			require_once PINGPONG_DIR . 'core/class-pingpong-cpt-league.php';
+			require_once PINGPONG_DIR . 'core/class-pingpong-shortcodes.php';
+			require_once PINGPONG_DIR . 'core/includes/class-pingpong-shortcode.php';
+			require_once PINGPONG_DIR . 'core/class-pingpong-db.php';
 
 			$this->roles      = new PingPong_Roles();
+			$this->db         = new PingPong_DB();
 			$this->cpt_match  = new PingPong_CPT_Match();
 			$this->cpt_team   = new PingPong_CPT_Team();
 			$this->cpt_league = new PingPong_CPT_League();
+			$this->shortcodes = new PingPong_Shortcodes();
 
 			if ( is_admin() ) {
 
@@ -144,9 +168,23 @@ if ( ! class_exists( 'PingPong' ) ) {
 		function register_scripts() {
 
 			wp_register_style(
+				'pingpong',
+				PINGPONG_URI . '/assets/dist/css/pingpong.min.css',
+				array(),
+				defined( 'WP_DEBUG' ) && WP_DEBUG ? time() : PINGPONG_VERSION
+			);
+
+			wp_register_style(
 				'pingpong-admin',
 				PINGPONG_URI . '/assets/dist/css/pingpong-admin.min.css',
 				array(),
+				defined( 'WP_DEBUG' ) && WP_DEBUG ? time() : PINGPONG_VERSION
+			);
+
+			wp_register_script(
+				'pingpong',
+				PINGPONG_URI . '/assets/dist/js/pingpong.min.js',
+				array( 'select2', 'jquery' ),
 				defined( 'WP_DEBUG' ) && WP_DEBUG ? time() : PINGPONG_VERSION
 			);
 
@@ -155,6 +193,20 @@ if ( ! class_exists( 'PingPong' ) ) {
 				PINGPONG_URI . '/assets/dist/js/pingpong-admin.min.js',
 				array( 'jquery' ),
 				defined( 'WP_DEBUG' ) && WP_DEBUG ? time() : PINGPONG_VERSION
+			);
+
+			wp_register_style(
+				'pingpong-select2',
+				PINGPONG_URI . '/vendor/select2/select2.min.css',
+				array(),
+				'4.0.3'
+			);
+
+			wp_register_script(
+				'pingpong-select2',
+				PINGPONG_URI . '/vendor/select2/select2.full.min.js',
+				array( 'jquery' ),
+				'4.0.3'
 			);
 
 			/**
@@ -179,6 +231,20 @@ if ( ! class_exists( 'PingPong' ) ) {
 		}
 
 		/**
+		 * Enqueue scripts.
+		 *
+		 * @since {{VERSION}}
+		 * @access private
+		 */
+		function enqueue_scripts() {
+
+			wp_enqueue_style( 'pingpong' );
+			wp_enqueue_script( 'pingpong' );
+			wp_enqueue_style( 'pingpong-select2' );
+			wp_enqueue_script( 'pingpong-select2' );
+		}
+
+		/**
 		 * Enqueue admin scripts.
 		 *
 		 * @since {{VERSION}}
@@ -192,6 +258,10 @@ if ( ! class_exists( 'PingPong' ) ) {
 	}
 
 	register_uninstall_hook( __FILE__, array( 'PingPong_Roles', 'remove_roles' ) );
+
+	// Installation
+	require_once PINGPONG_DIR . 'core/class-pingpong-install.php';
+	register_activation_hook( __FILE__, array( 'PingPong_Install', 'install' ) );
 
 	require_once PINGPONG_DIR . 'core/pingpong-functions.php';
 	require_once PINGPONG_DIR . 'pingpong-bootstrapper.php';

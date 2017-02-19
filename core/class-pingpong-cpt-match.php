@@ -153,7 +153,7 @@ class PingPong_CPT_Match extends RBM_CPT {
 		}
 
 		$post_statuses = get_post_stati( array(
-			'show_in_admin_all_list'    => true,
+			'show_in_admin_all_list' => true,
 		) );
 
 		$query->set( 'post_status', $post_statuses );
@@ -555,24 +555,81 @@ class PingPong_CPT_Match extends RBM_CPT {
 	 */
 	function ajax_submit_scores() {
 
+		// TODO figure out how to save this stuff properly for rankings
+
 		$match_ID = $_POST['match_ID'];
 		$scores   = $_POST['scores'];
 
 		unset( $scores['players']['length'] );
 		unset( $scores['teams']['length'] );
 
-		foreach ( $scores['players'] as $player_ID => $player_score ) {
+		$players_scores = array();
 
-			if ( ! ( $player_scores = get_user_meta( $player_ID, 'pingpong_scores', true ) ) ) {
+		foreach ( $scores['matches'] as $match_i => $games ) {
 
-				$player_scores = array();
+			$match_player_games = array( 0, 0 );
+
+			foreach ( $games as $game_i => $game ) {
+
+				foreach ( $game as $player_i => $player ) {
+
+					if ( ! isset( $players_scores[ $player['id'] ] ) ) {
+
+						$players_scores[ $player['id'] ] = wp_parse_args(
+							get_post_meta( $player['id'], 'pingpong_rank', true ),
+							array(
+								'matches_played' => 0,
+								'matches_won'    => 0,
+								'matches_lost'   => 0,
+								'games_won'      => 0,
+								'games_lost'     => 0,
+								'points_earned'  => 0,
+								'points_lost'    => 0,
+							)
+						);
+					}
+
+					$other_player = $player_i == 0 ? $games[1] : $games[0];
+
+					$match_player_games[ $player_i ] = $match_player_games[ $player_i ] +
+					                                   ( (int) $player['score'] > (int) $other_player['score'] );
+
+					// Games won
+					$players_scores[ $player['id'] ]['games_won'] =
+						(int) $players_scores[ $player['id'] ]['games_won'] +
+						( (int) $player['score'] > (int) $other_player['score'] );
+
+					// Games lost
+					$players_scores[ $player['id'] ]['games_lost'] =
+						(int) $players_scores[ $player['id'] ]['games_lost'] +
+						( (int) $player['score'] < (int) $other_player['score'] );
+
+					// Points earned
+					$players_scores[ $player['id'] ]['points_earned'] =
+						(int) $players_scores[ $player['id'] ]['points_earned'] + (int) $player['score'];
+
+					// Points lost
+					$players_scores[ $player['id'] ]['points_lost'] =
+						(int) $players_scores[ $player['id'] ]['points_lost'] + (int) $other_player['score'];
+				}
 			}
 
-			$player_scores[ $match_ID ] = $player_score;
+			// Matches played
+			$players_scores[ $player['id'] ]['matches_played'] =
+				(int) $players_scores[ $player['id'] ]['matches_played'] + 1;
 
-			update_user_meta( $player_ID, 'pingpong_scores', $player_scores );
-			update_user_meta( $player_ID, 'pingpong_games', $player_score );
+			// Matches won
+			$players_scores[ $player['id'] ]['matches_won'] =
+				(int) $players_scores[ $player['id'] ]['matches_won'] +
+				( $player_total_score > $other_player_total_score ? 1 : 0 );
+
+			// Matches lost
+			$players_scores[ $player['id'] ]['matches_lost'] =
+				(int) $players_scores[ $player['id'] ]['matches_lost'] +
+				( $player_total_score < $other_player_total_score ? 1 : 0 );
 		}
+
+		return;
 
 		foreach ( $scores['teams'] as $team_ID => $team_score ) {
 
@@ -628,7 +685,7 @@ class PingPong_CPT_Match extends RBM_CPT {
 		foreach ( $scores['teams'] as $team_ID => $score ) {
 
 			$team_player_IDs = pingpong_get_team_players( $team_ID );
-			$team_players = array();
+			$team_players    = array();
 
 			foreach ( (array) $team_player_IDs as $player_ID ) {
 
