@@ -103,6 +103,9 @@ function pingpong_save_match( $player1, $player2 ) {
 	$player2_rankings['games_won']  = $player2_rankings['games_won'] + $player2['scores']['games'];
 	$player2_rankings['games_lost'] = $player2_rankings['games_lost'] + $player1['scores']['games'];
 
+	$player1_rankings['plusminus']  = $player1_rankings['games_won'] - $player1_rankings['games_lost'];
+	$player2_rankings['plusminus']  = $player2_rankings['games_won'] - $player2_rankings['games_lost'];
+
 	PingPongDB()->update_player_rankings( $player1['ID'], $player1_rankings );
 	PingPongDB()->update_player_rankings( $player2['ID'], $player2_rankings );
 }

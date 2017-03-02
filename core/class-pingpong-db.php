@@ -40,15 +40,59 @@ class PingPong_DB {
 			",
 			ARRAY_A );
 
+		$rankings = $results ? $results : pingpong_rankings_schema();
+
 		/**
 		 * Filters the get_rankings results.
 		 *
 		 * @since {{VERSION}}
 		 */
-		$results = apply_filters(
+		$rankings = apply_filters(
 			'pingpong_db_get_player_rankings',
-			$results,
+			$rankings,
 			$player_ID
+		);
+
+		return $rankings;
+	}
+
+	/**
+	 * Gets all players' rankings.
+	 *
+	 * @since {{VERSION}}
+	 *
+	 * @param array $args
+	 *
+	 * @return array|null|object|void
+	 */
+	public static function get_all_rankings( $args ) {
+
+		global $wpdb;
+
+		$args = wp_parse_args( $args, array(
+			'orderby'  => 'plusminus',
+			'order'    => 'DESC',
+			'offset'   => 0,
+			'per_page' => 10,
+		) );
+
+		$results = $wpdb->get_results(
+			"
+			SELECT *
+			FROM {$wpdb->prefix}pingpong_rankings
+			ORDER BY $args[orderby] $args[order]
+			LIMIT $args[per_page] OFFSET $args[offset]
+			",
+			ARRAY_A );
+
+		/**
+		 * Filters the get_all_rankings results.
+		 *
+		 * @since {{VERSION}}
+		 */
+		$results = apply_filters(
+			'pingpong_db_get_players_rankings',
+			$results
 		);
 
 		return $results;
@@ -84,7 +128,7 @@ class PingPong_DB {
 				array(
 					'player_ID' => $player_ID,
 				),
-				array_fill(0, count( $rankings ), '%d' ),
+				array_fill( 0, count( $rankings ), '%d' ),
 				array(
 					'%d',
 				)
@@ -97,7 +141,7 @@ class PingPong_DB {
 			$result = $wpdb->insert(
 				"{$wpdb->prefix}pingpong_rankings",
 				$rankings,
-				array_fill(0, count( $rankings ) + 1, '%d' )
+				array_fill( 0, count( $rankings ) + 1, '%d' )
 			);
 		}
 

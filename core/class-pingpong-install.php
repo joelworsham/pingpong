@@ -47,6 +47,7 @@ class PingPong_Install {
 
 		$sql = "CREATE TABLE {$wpdb->prefix}pingpong_rankings (
 		  player_id mediumint(9) NOT NULL,
+		  plusminus int,
 		  points_won int,
 		  points_lost int,
 		  games_won int,

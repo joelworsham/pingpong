@@ -46,6 +46,7 @@ class PingPong_CPT_Match extends RBM_CPT {
 		add_action( 'wp_ajax_pingpong_get_team_players', array( $this, 'ajax_get_teams_players' ) );
 		add_action( 'wp_ajax_pingpong_submit_scores', array( $this, 'ajax_submit_scores' ) );
 		add_action( 'wp_ajax_pingpong_get_match_scores', array( $this, 'ajax_get_match_scores' ) );
+		add_filter( 'the_content', array( $this, 'output_match' ) );
 	}
 
 	/**
@@ -711,5 +712,15 @@ class PingPong_CPT_Match extends RBM_CPT {
 			'scores' => $scores,
 			'type'   => $match_type,
 		) );
+	}
+
+	function output_match( $content ) {
+
+		if (is_single() && get_post_type() === 'match' ) {
+
+			return '[pingpong_match]';
+		}
+
+		return $content;
 	}
 }

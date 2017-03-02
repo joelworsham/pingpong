@@ -86,6 +86,15 @@ if ( ! class_exists( 'PingPong' ) ) {
 		 */
 		public $shortcodes;
 
+		/**
+		 * Creates the profiles.
+		 *
+		 * @since {{VERSION}}
+		 *
+		 * @var PingPong_Profiles
+		 */
+		public $profiles;
+
 		private function __clone() {
 		}
 
@@ -143,6 +152,8 @@ if ( ! class_exists( 'PingPong' ) ) {
 			require_once PINGPONG_DIR . 'core/class-pingpong-shortcodes.php';
 			require_once PINGPONG_DIR . 'core/includes/class-pingpong-shortcode.php';
 			require_once PINGPONG_DIR . 'core/class-pingpong-db.php';
+			require_once PINGPONG_DIR . 'core/class-pingpong-profiles.php';
+			require_once PINGPONG_DIR . 'core/class-pingpong-rankings.php';
 
 			$this->roles      = new PingPong_Roles();
 			$this->db         = new PingPong_DB();
@@ -150,13 +161,8 @@ if ( ! class_exists( 'PingPong' ) ) {
 			$this->cpt_team   = new PingPong_CPT_Team();
 			$this->cpt_league = new PingPong_CPT_League();
 			$this->shortcodes = new PingPong_Shortcodes();
-
-			if ( is_admin() ) {
-
-				require_once PINGPONG_DIR . 'admin/class-pingpong-rankings.php';
-
-				$this->cpt_league = new PingPong_Rankings();
-			}
+			$this->profiles   = new PingPong_Profiles();
+			$this->rankings   = new PingPong_Rankings();
 		}
 
 		/**
