@@ -30,7 +30,7 @@ class PingPong_Rankings {
 
 		global $wp_query;
 
-		if ( get_the_ID() !== 45 ) {
+		if ( get_the_ID() !== pingpong_get_page( 'rankings' ) ) {
 
 			return $content;
 		}
@@ -39,9 +39,15 @@ class PingPong_Rankings {
 		$page     = isset( $wp_query->query_vars['page'] ) && $wp_query->query_vars['page'] > 0 ?
 			(int) $wp_query->query_vars['page'] : 1;
 
+		$base_link = get_permalink() . '?' . http_build_query( $_GET );
+		$order     = isset( $_GET['order'] ) ? $_GET['order'] : 'DESC';
+		$orderby   = isset( $_GET['orderby'] ) ? $_GET['orderby'] : 'plusminus';
+
 		$rankings = PingPongDB()->get_all_rankings( array(
 			'per_page' => $per_page,
 			'offset'   => ( $page - 1 ) * $per_page,
+			'order'    => $order,
+			'orderby'  => $orderby,
 		) );
 
 		ob_start();

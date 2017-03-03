@@ -103,9 +103,51 @@ function pingpong_save_match( $player1, $player2 ) {
 	$player2_rankings['games_won']  = $player2_rankings['games_won'] + $player2['scores']['games'];
 	$player2_rankings['games_lost'] = $player2_rankings['games_lost'] + $player1['scores']['games'];
 
-	$player1_rankings['plusminus']  = $player1_rankings['games_won'] - $player1_rankings['games_lost'];
-	$player2_rankings['plusminus']  = $player2_rankings['games_won'] - $player2_rankings['games_lost'];
+	$player1_rankings['plusminus'] = $player1_rankings['games_won'] - $player1_rankings['games_lost'];
+	$player2_rankings['plusminus'] = $player2_rankings['games_won'] - $player2_rankings['games_lost'];
 
 	PingPongDB()->update_player_rankings( $player1['ID'], $player1_rankings );
 	PingPongDB()->update_player_rankings( $player2['ID'], $player2_rankings );
+}
+
+function pingpong_get_pages_list() {
+
+	return array(
+		'profile'  => null,
+		'rankings' => null,
+	);
+}
+
+function pingpong_get_pages_titles() {
+
+	return array(
+		'profile'  => __( 'Profile', 'pingpong' ),
+		'rankings' => __( 'Rankings', 'pingpong' ),
+	);
+}
+
+function pingpong_get_page_title( $page ) {
+
+	$titles = pingpong_get_pages_titles();
+
+	return isset( $titles[ $page ] ) ? $titles[ $page ] : false;
+}
+
+function pingpong_get_pages() {
+
+	static $pages = false;
+
+	if ( $pages === false ) {
+
+		$pages = get_option( 'pingpong_pages', pingpong_get_pages_list() );
+	}
+
+	return $pages;
+}
+
+function pingpong_get_page( $page ) {
+
+	$pages = pingpong_get_pages();
+
+	return isset( $pages[ $page ] ) ? $pages[ $page ] : false;
 }

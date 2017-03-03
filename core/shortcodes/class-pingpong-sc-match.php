@@ -189,6 +189,11 @@ class PingPong_SC_Match extends PingPong_Shortcode {
 					)
 				);
 
+				unset( $_SESSION['match_games'] );
+				unset( $_SESSION['match_settings'] );
+
+				$_POST = array();
+
 				break;
 		}
 

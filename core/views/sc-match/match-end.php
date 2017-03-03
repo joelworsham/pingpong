@@ -15,9 +15,9 @@ defined( 'ABSPATH' ) || die();
 
 <input type="hidden" name="page" value="intro"/>
 
-<strong>
+<h2>
 	<?php echo $settings[ $winner ]['name']; ?> wins!
-</strong>
+</h2>
 
 <table class="match-final-scores">
 	<thead>

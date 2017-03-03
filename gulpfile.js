@@ -57,7 +57,7 @@ gulp.task('scripts_admin', function () {
 });
 
 gulp.task('default', ['sass', 'scripts', 'scripts_admin', 'sass_admin'], function () {
-    gulp.watch(['./assets/src/scss/*.js'], ['sass']);
+    gulp.watch(['./assets/src/scss/*.scss'], ['sass']);
     gulp.watch(['./assets/src/js/*.js'], ['scripts']);
     gulp.watch(['./assets/src/js/admin/*.js'], ['scripts_admin']);
     gulp.watch(['./assets/src/scss/admin/*.scss'], ['sass_admin']);

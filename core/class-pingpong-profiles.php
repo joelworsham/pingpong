@@ -29,7 +29,15 @@ class PingPong_Profiles {
 
 	function rewrite_rules() {
 
-		add_rewrite_rule( '^profile/([^/]*)/?', 'index.php?page_id=42&profile=$matches[1]', 'top' );
+		$page_ID = pingpong_get_page( 'profile' );
+
+		if ( ! $page_ID || ! ( $page = get_post( $page_ID ) ) ) {
+
+			return;
+		}
+
+		add_rewrite_rule( "^{$page->post_name}/([^/]*)/?", "index.php?page_id={$page_ID}&profile=\$matches[1]", 'top' );
+
 		add_rewrite_tag( '%profile%', '([^&]+)' );
 	}
 
@@ -37,7 +45,7 @@ class PingPong_Profiles {
 
 		global $wp_query;
 
-		if ( get_the_ID() !== 42 ||
+		if ( get_the_ID() !== pingpong_get_page( 'profile' ) ||
 		     ( ! $wp_query->query_vars['profile'] && ! is_main_query() )
 		) {
 

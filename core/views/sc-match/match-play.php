@@ -19,10 +19,6 @@ defined( 'ABSPATH' ) || die();
 <h3>Scores</h3>
 
 <div class="match-player-score">
-	<div class="match-player-score-name">
-		<?php echo esc_attr( $settings['player1']['name'] ); ?>
-	</div>
-
 	<div class="match-player-score-value">
 		<select name="match_player_1_score">
 			<?php for ( $i = 0; $i <= 30; $i ++ ) : ?>
@@ -32,13 +28,13 @@ defined( 'ABSPATH' ) || die();
 			<?php endfor; ?>
 		</select>
 	</div>
+
+	<div class="match-player-score-name">
+		<?php echo esc_attr( $settings['player1']['name'] ); ?>
+	</div>
 </div>
 
 <div class="match-player-score">
-	<div class="match-player-score-name">
-		<?php echo esc_attr( $settings['player2']['name'] ); ?>
-	</div>
-
 	<div class="match-player-score-value">
 		<select name="match_player_2_score">
 			<?php for ( $i = 0; $i <= 30; $i ++ ) : ?>
@@ -47,6 +43,10 @@ defined( 'ABSPATH' ) || die();
 				</option>
 			<?php endfor; ?>
 		</select>
+	</div>
+
+	<div class="match-player-score-name">
+		<?php echo esc_attr( $settings['player2']['name'] ); ?>
 	</div>
 </div>
 
